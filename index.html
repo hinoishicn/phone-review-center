@@ -1,0 +1,323 @@
+<?php session_start(); ?>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IT运维帮助中心</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+  <!-- 导航栏 -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="logo">
+        <a href="index.php">
+          <i class="fa fa-cogs"></i> IT运维帮助中心
+        </a>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#" class="active">首页</a></li>
+        <li><a href="#articles">知识库</a></li>
+        <li><a href="#versions">版本更新</a></li>
+        <li><a href="#about">关于我们</a></li>
+        <li>
+          <?php if (isset($_SESSION['username'])): ?>
+            <!-- 登录用户显示下拉菜单 -->
+            <a href="javascript:;" class="user-menu">
+              <i class="fa fa-user"></i> <?php echo $_SESSION['username']; ?>
+              <ul class="submenu">
+                <?php if ($_SESSION['role'] === 'admin'): ?>
+                  <!-- 仅管理员显示：进入后台 -->
+                  <li><a href="admin/index.php"><i class="fa fa-cog"></i> 进入后台</a></li>
+                <?php endif; ?>
+                <li><a href="reset_password.php"><i class="fa fa-key"></i> 重置密码</a></li>
+                <li><a href="javascript:logout()"><i class="fa fa-sign-out"></i> 退出登录</a></li>
+              </ul>
+            </a>
+          <?php else: ?>
+            <!-- 未登录显示登录按钮 -->
+            <a href="javascript:showLogin()" class="login-btn"><i class="fa fa-sign-in"></i> 登录</a>
+          <?php endif; ?>
+        </li>
+      </ul>
+      <button class="menu-toggle"><i class="fa fa-bars"></i></button>
+    </div>
+  </nav>
+
+  <!-- 横幅区域 -->
+  <section class="banner">
+    <div class="container">
+      <h2>一站式IT运维解决方案</h2>
+      <p>提供专业的运维知识库、故障排查指南和系统版本更新记录</p>
+      <div class="search-box">
+        <input type="text" placeholder="搜索知识库...">
+        <button><i class="fa fa-search"></i></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 主内容区 -->
+  <div class="main-container container">
+    <!-- 左侧主内容 -->
+    <div class="main-content">
+      <!-- 文章列表区域 -->
+      <section id="articles" class="content-card">
+        <div class="card-header">
+          <h2><i class="fa fa-book"></i> 运维知识库</h2>
+          <?php if (isset($_SESSION['username'])): ?>
+            <button class="btn-add" onclick="document.getElementById('editor-container').style.display='block'">
+              <i class="fa fa-plus"></i> 发布文章
+            </button>
+          <?php endif; ?>
+        </div>
+        <div id="articles-list" class="card-body"><!-- 文章内容由JS动态加载 --></div>
+      </section>
+
+      <!-- 编辑发布区域（仅登录可见） -->
+      <section id="editor-container" class="content-card" style="display: none;">
+        <div class="card-header">
+          <h2><i class="fa fa-pencil"></i> 发布新文章</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label>标题：</label>
+            <input type="text" id="article-title" placeholder="请输入文章标题">
+          </div>
+          <div class="form-group">
+            <label>分类：</label>
+            <input type="text" id="article-category" placeholder="如：服务器、网络">
+          </div>
+          <div class="form-group">
+            <label>内容：</label>
+            <textarea id="article-content" rows="6" placeholder="请输入文章内容"></textarea>
+          </div>
+          <button onclick="publishArticle()" class="btn-submit">发布文章</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- 右侧边栏 -->
+    <aside class="sidebar">
+      <!-- 版本记录区域 -->
+      <section id="versions" class="content-card">
+        <div class="card-header">
+          <h2><i class="fa fa-history"></i> 系统版本更新</h2>
+        </div>
+        <div id="versions-list" class="card-body"><!-- 版本内容由JS动态加载 --></div>
+      </section>
+
+      <!-- 联系信息 -->
+      <section class="content-card contact-card">
+        <div class="card-header">
+          <h2><i class="fa fa-phone"></i> 联系我们</h2>
+        </div>
+        <div class="card-body">
+          <p><i class="fa fa-envelope"></i> support@it.hinoishi.cn</p>
+          <p><i class="fa fa-phone"></i> 400-123-4567</p>
+          <p><i class="fa fa-map-marker"></i> 北京市海淀区科技园区</p>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <!-- 页脚 -->
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="#">关于我们</a>
+        <a href="#">使用条款</a>
+        <a href="#">隐私政策</a>
+        <a href="#contact">联系我们</a>
+      </div>
+      <p>&copy; 2023 IT运维帮助中心 - 版权所有</p>
+    </div>
+  </footer>
+
+  <!-- 登录弹窗 -->
+  <div id="login-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="hideLogin()">&times;</span>
+      <h2><i class="fa fa-sign-in"></i> 用户登录</h2>
+      <form id="login-form">
+        <div class="form-group">
+          <label><i class="fa fa-user"></i> 用户名：</label>
+          <input type="text" id="login-username" required>
+        </div>
+        <div class="form-group">
+          <label><i class="fa fa-lock"></i> 密码：</label>
+          <input type="password" id="login-password" required>
+        </div>
+        <button type="submit" class="login-btn">登录</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = './api';
+    const loginModal = document.getElementById('login-modal');
+
+    // 导航菜单切换（移动端）
+    document.querySelector('.menu-toggle').addEventListener('click', function() {
+      document.querySelector('.nav-links').classList.toggle('show');
+    });
+
+    // 登录弹窗控制
+    function showLogin() {
+      loginModal.classList.add('show');
+    }
+    function hideLogin() {
+      loginModal.classList.remove('show');
+    }
+
+    // 点击空白处关闭弹窗
+    loginModal.addEventListener('click', function(event) {
+      if (event.target === loginModal) {
+        hideLogin();
+      }
+    });
+
+    // 登录表单提交
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
+      login(username, password);
+    });
+
+    // 登录API调用（包含角色处理）
+    async function login(username, password) {
+      try {
+        const res = await fetch(`${API_BASE}/auth.php?action=login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          // 登录成功后刷新页面（让后台PHP重新渲染用户菜单）
+          hideLogin();
+          location.reload();
+        } else {
+          alert('登录失败：' + data.message);
+        }
+      } catch (err) {
+        console.error('登录失败：', err);
+        alert('网络错误，请重试');
+      }
+    }
+
+    // 退出登录
+    async function logout() {
+      try {
+        const res = await fetch(`${API_BASE}/auth.php?action=logout`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          location.reload();
+        }
+      } catch (err) {
+        console.error('退出失败：', err);
+      }
+    }
+
+    // 加载文章列表
+    async function loadArticles() {
+      try {
+        const res = await fetch(`${API_BASE}/articles.php?action=list`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          renderArticles(data.data);
+        }
+      } catch (err) {
+        console.error('加载文章失败：', err);
+        document.getElementById('articles-list').innerHTML = '<p class="empty">文章加载失败啦~</p>';
+      }
+    }
+
+    // 渲染文章列表
+    function renderArticles(articles) {
+      const container = document.getElementById('articles-list');
+      if (articles.length === 0) {
+        container.innerHTML = '<p class="empty">暂无文章，登录后可发布~</p>';
+        return;
+      }
+      container.innerHTML = articles.map(article => `
+        <div class="article-item">
+          <h3>${article.title}</h3>
+          <p>${article.content.substring(0, 150)}${article.content.length > 150 ? '...' : ''}</p>
+          <div class="article-meta">
+            <span><i class="fa fa-folder"></i> ${article.category}</span>
+            <span><i class="fa fa-user"></i> ${article.author}</span>
+            <span><i class="fa fa-clock-o"></i> ${article.created_at}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 加载版本记录
+    async function loadVersions() {
+      try {
+        const res = await fetch(`${API_BASE}/versions.php?action=list`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          renderVersions(data.data);
+        }
+      } catch (err) {
+        console.error('加载版本失败：', err);
+        document.getElementById('versions-list').innerHTML = '<p class="empty">版本记录加载失败啦~</p>';
+      }
+    }
+
+    // 渲染版本记录
+    function renderVersions(versions) {
+      const container = document.getElementById('versions-list');
+      container.innerHTML = versions.map(version => `
+        <div class="version-item">
+          <h3>${version.version_name}（版本号：V${version.version_code}）</h3>
+          <p><i class="fa fa-calendar"></i> ${version.release_date}</p>
+          <p><i class="fa fa-tag"></i> ${version.update_type}</p>
+          <p><i class="fa fa-comment"></i> ${version.changes.replace(/\n/g, '<br>')}</p>
+        </div>
+      `).join('');
+    }
+
+    // 发布文章
+    async function publishArticle() {
+      const title = document.getElementById('article-title').value;
+      const category = document.getElementById('article-category').value;
+      const content = document.getElementById('article-content').value;
+      if (!title || !category || !content) {
+        alert('请填写完整信息哦~');
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/articles.php?action=publish`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, category, content })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          alert('发布成功啦！');
+          loadArticles();
+          document.getElementById('editor-container').style.display = 'none';
+          document.getElementById('article-title').value = '';
+          document.getElementById('article-category').value = '';
+          document.getElementById('article-content').value = '';
+        } else {
+          alert('发布失败：' + data.message);
+        }
+      } catch (err) {
+        console.error('发布失败：', err);
+      }
+    }
+
+    // 页面初始化
+    window.onload = () => {
+      loadArticles();
+      loadVersions();
+    };
+  </script>
+</body>
+</html>
