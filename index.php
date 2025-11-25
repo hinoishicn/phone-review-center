@@ -37,6 +37,16 @@ $page_description = "提供最新手机详细对比评测，包括处理器性�
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- 自定义CSS -->
     <link href="assets/css/style.css" rel="stylesheet">
+    
+    <!-- PWA配置 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="手机测评中心">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/icon-16x16.png">
 </head>
 <body>
     <!-- 导航栏 -->
@@ -298,6 +308,21 @@ $page_description = "提供最新手机详细对比评测，包括处理器性�
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- 自定义JS -->
     <script src="assets/js/main.js"></script>
+    
+    <!-- PWA Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker 注册成功:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker 注册失败:', error);
+                    });
+            });
+        }
+    </script>
     
     <script>
     // 添加到对比

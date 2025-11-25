@@ -1,0 +1,230 @@
+name: 部署到GitHub Pages和Gitee
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+    
+    - name: 设置PHP环境
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        extensions: mbstring, mysqli, pdo_mysql, gd, curl, json
+    
+    - name: 验证PHP语法
+      run: |
+        find . -name "*.php" -exec php -l {} \; > php_errors.log
+        if [ -s php_errors.log ]; then
+          echo "发现PHP语法错误："
+          cat php_errors.log
+          exit 1
+        fi
+        echo "PHP语法检查通过"
+    
+    - name: 压缩资源文件
+      run: |
+        # 压缩CSS文件
+        find assets/css -name "*.css" -exec gzip -k {} \;
+        
+        # 压缩JS文件
+        find assets/js -name "*.js" -exec gzip -k {} \;
+        
+        # 优化图片
+        sudo apt-get update && sudo apt-get install -y optipng jpegoptim
+        find assets/images -name "*.png" -exec optipng {} \;
+        find assets/images -name "*.jpg" -exec jpegoptim --strip-all {} \;
+    
+    - name: 生成静态文件
+      run: |
+        # 创建静态版本（移除PHP依赖）
+        mkdir -p static
+        cp -r assets static/
+        cp -r images static/
+        cp manifest.json static/
+        cp service-worker.js static/
+        
+        # 创建静态HTML版本
+        php -S localhost:8000 &
+        sleep 2
+        wget -r -np -k -p -E -e robots=off -P static http://localhost:8000/
+        pkill -f "php -S localhost:8000"
+    
+    - name: 部署到GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./static
+        publish_branch: gh-pages
+        cname: phone-review-center.com  # 可选：自定义域名
+    
+    - name: 同步到Gitee
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      run: |
+        # 设置Git配置
+        git config --global user.name "GitHub Actions"
+        git config --global user.email "actions@github.com"
+        
+        # 添加Gitee远程仓库
+        git remote add gitee https://${{ secrets.GITEE_USERNAME }}:${{ secrets.GITEE_PASSWORD }}@gitee.com/${{ secrets.GITEE_USERNAME }}/phone-review-center.git
+        
+        # 推送到Gitee
+        git push gitee main --force || true
+    
+    - name: 构建Android APK
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      run: |
+        # 安装Android SDK
+        sudo apt-get update
+        sudo apt-get install -y openjdk-11-jdk wget unzip
+        
+        # 下载Android SDK
+        wget https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip
+        unzip commandlinetools-linux-8512546_latest.zip
+        mkdir -p android-sdk/cmdline-tools
+        mv cmdline-tools android-sdk/cmdline-tools/latest
+        
+        # 设置环境变量
+        export ANDROID_HOME=$PWD/android-sdk
+        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+        
+        # 安装必要的SDK组件
+        yes | sdkmanager --licenses
+        sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+        
+        # 构建APK
+        cd android-app
+        chmod +x gradlew
+        ./gradlew assembleRelease || ./gradlew assembleDebug
+        
+        # 上传APK到发布区
+        cd ..
+        mkdir -p release
+        cp android-app/app/build/outputs/apk/*/*.apk release/ || true
+    
+    - name: 创建发布包
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      run: |
+        # 创建发布包
+        zip -r phone-review-center.zip . -x "*.git*" "node_modules/*" "*.log"
+        
+        # 移动文件到发布目录
+        mkdir -p release
+        mv phone-review-center.zip release/
+    
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v3
+      with:
+        name: phone-review-build
+        path: release/
+    
+    - name: 部署完成通知
+      if: success()
+      run: |
+        echo "🎉 部署成功！"
+        echo "📱 GitHub Pages: https://${{ github.repository_owner }}.github.io/phone-review-center"
+        echo "🔧 构建产物已上传到Artifacts"
+        
+        # 可选：发送通知到钉钉/企业微信/Slack
+        # curl -X POST "你的Webhook地址" -H "Content-Type: application/json" -d '{"msg":"部署成功"}'
+
+  deploy-mysql:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+    
+    - name: 设置MySQL
+      run: |
+        # 安装MySQL
+        sudo apt-get update
+        sudo apt-get install -y mysql-server mysql-client
+        
+        # 启动MySQL服务
+        sudo systemctl start mysql
+        sudo systemctl enable mysql
+        
+        # 创建数据库
+        mysql -u root -e "CREATE DATABASE IF NOT EXISTS phone_review_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+        
+        # 导入数据库结构
+        if [ -f "database/phone_review_db.sql" ]; then
+          mysql -u root phone_review_db < database/phone_review_db.sql
+        fi
+        
+        # 创建测试数据
+        mysql -u root phone_review_db -e "
+        INSERT INTO brands (name, slug, description, logo_url, phone_count, status) VALUES
+        ('苹果', 'apple', 'Apple iPhone系列手机', '/assets/images/brands/apple.png', 15, 1),
+        ('三星', 'samsung', 'Samsung Galaxy系列', '/assets/images/brands/samsung.png', 25, 1),
+        ('小米', 'xiaomi', 'Xiaomi/Redmi系列', '/assets/images/brands/xiaomi.png', 30, 1),
+        ('华为', 'huawei', 'Huawei Mate/P系列', '/assets/images/brands/huawei.png', 20, 1),
+        ('OPPO', 'oppo', 'OPPO Find/Reno系列', '/assets/images/brands/oppo.png', 18, 1);
+        
+        INSERT INTO phones (name, brand_id, slug, price, processor_name, rear_camera_main, battery_capacity, status) VALUES
+        ('iPhone 15 Pro Max', 1, 'iphone-15-pro-max', 9999, 'A17 Pro', '48MP主摄+12MP超广角+12MP长焦', 4422, 1),
+        ('Galaxy S24 Ultra', 2, 'galaxy-s24-ultra', 8999, 'Snapdragon 8 Gen 3', '200MP主摄+12MP超广角+50MP长焦+10MP长焦', 5000, 1),
+        ('Xiaomi 14 Ultra', 3, 'xiaomi-14-ultra', 6499, 'Snapdragon 8 Gen 3', '50MP主摄+50MP超广角+50MP长焦+50MP长焦', 5300, 1),
+        ('Mate 60 Pro+', 4, 'mate-60-pro-plus', 6999, 'Kirin 9000S', '48MP主摄+40MP超广角+48MP长焦', 5000, 1),
+        ('Find X7 Ultra', 5, 'find-x7-ultra', 5999, 'Snapdragon 8 Gen 3', '50MP主摄+50MP超广角+50MP长焦+50MP长焦', 5000, 1);
+        "
+        
+        echo "✅ 数据库初始化完成"
+    
+    - name: 测试数据库连接
+      run: |
+        # 创建测试PHP文件
+        cat > test_db.php << 'EOF'
+        <?php
+        require_once 'config/database.php';
+        
+        try {
+            $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            $stmt = $pdo->query("SELECT COUNT(*) as count FROM brands");
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            echo "数据库连接成功！品牌数量: " . $result['count'] . "\n";
+        } catch (PDOException $e) {
+            echo "数据库连接失败: " . $e->getMessage() . "\n";
+            exit(1);
+        }
+        ?>
+        EOF
+        
+        # 运行测试
+        php test_db.php
+    
+    - name: 清理测试文件
+      run: rm -f test_db.php
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [deploy, deploy-mysql]
+    if: always()
+    
+    steps:
+    - name: 发送通知
+      run: |
+        if [ "${{ needs.deploy.result }}" == "success" ] && [ "${{ needs.deploy-mysql.result }}" == "success" ]; then
+          echo "🎉 所有部署任务成功完成！"
+          echo "📱 网站地址: https://${{ github.repository_owner }}.github.io/phone-review-center"
+          echo "🔧 管理后台: https://${{ github.repository_owner }}.github.io/phone-review-center/admin"
+          echo "📊 数据库: MySQL已初始化完成"
+        else
+          echo "❌ 部署失败，请检查日志"
+          exit 1
+        fi
