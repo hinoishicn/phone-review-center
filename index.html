@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手机测评中心 - 专业的手机对比评测平台</title>
+    <meta name="description" content="手机测评中心提供专业的手机评测、参数对比、性能测试，帮助您选择最适合的手机">
+    <meta name="keywords" content="手机测评,手机对比,手机评测,手机参数,手机性能">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #f59e0b;
+            --success-color: #10b981;
+            --dark-bg: #1f2937;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+        
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+            border: none;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .brand-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 1rem;
+        }
+        
+        .brand-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+        }
+        
+        .brand-logo {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .cta-section {
+            background: var(--dark-bg);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+            border: none;
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        
+        .navbar {
+            background: white !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-color) !important;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            color: #374151 !important;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary-color) !important;
+        }
+        
+        .footer {
+            background: var(--dark-bg);
+            color: white;
+            padding: 40px 0 20px;
+            margin-top: 80px;
+        }
+        
+        .stats-section {
+            background: #f8fafc;
+            padding: 60px 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 1.1rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .feature-card {
+                margin-bottom: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#home">
+                <i class="fas fa-mobile-alt me-2"></i>手机测评中心
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features">功能特色</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#brands">热门品牌</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#download">下载应用</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 英雄区域 -->
+    <section id="home" class="hero-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <h1 class="hero-title">专业手机测评平台</h1>
+                    <p class="hero-subtitle">提供详细的手机参数对比、性能测试和购买建议，帮助您做出明智的选择</p>
+                    <div class="mt-4">
+                        <a href="#features" class="btn btn-light btn-lg me-3">
+                            <i class="fas fa-search me-2"></i>开始探索
+                        </a>
+                        <a href="https://github.com/hinoishicn/phone-review-center" class="btn btn-outline-light btn-lg">
+                            <i class="fab fa-github me-2"></i>查看源码
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 统计数据 -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-item">
+                        <span class="stat-number">50+</span>
+                        <div class="stat-label">手机型号</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-item">
+                        <span class="stat-number">15+</span>
+                        <div class="stat-label">品牌覆盖</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-item">
+                        <span class="stat-number">100+</span>
+                        <div class="stat-label">参数对比</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-item">
+                        <span class="stat-number">24/7</span>
+                        <div class="stat-label">在线服务</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 功能特色 -->
+    <section id="features" class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center mb-5">
+                    <h2 class="display-4 fw-bold text-dark mb-4">功能特色</h2>
+                    <p class="lead text-muted">我们提供全面的手机测评服务，让您轻松找到最适合的手机</p>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <div class="feature-icon">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <h4 class="card-title">智能搜索</h4>
+                            <p class="card-text">支持按品牌、价格、性能等多维度搜索，快速找到目标手机</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <div class="feature-icon">
+                                <i class="fas fa-balance-scale"></i>
+                            </div>
+                            <h4 class="card-title">详细对比</h4>
+                            <p class="card-text">并排对比手机参数，处理器、摄像头、电池等关键指标一目了然</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <div class="feature-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h4 class="card-title">性能评测</h4>
+                            <p class="card-text">基于真实数据的性能分析，包括跑分、续航、拍照样张等</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <div class="feature-icon">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <h4 class="card-title">PWA支持</h4>
+                            <p class="card-text">渐进式Web应用，支持离线访问，安装到主屏幕</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <div class="feature-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <h4 class="card-title">用户评价</h4>
+                            <p class="card-text">收集真实用户评价，提供购买参考和使用体验分享</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center">
+                            <div class="feature-icon">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <h4 class="card-title">AI推荐</h4>
+                            <p class="card-text">基于使用习惯和预算，智能推荐最适合的手机型号</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 热门品牌 -->
+    <section id="brands" class="py-5 bg-light">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center mb-5">
+                    <h2 class="display-4 fw-bold text-dark mb-4">热门品牌</h2>
+                    <p class="lead text-muted">覆盖主流手机品牌，提供全面的产品信息</p>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                    <div class="brand-card">
+                        <div class="brand-logo" style="background: #007aff;">🍎</div>
+                        <h6>苹果 Apple</h6>
+                        <small class="text-muted">15款手机</small>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                    <div class="brand-card">
+                        <div class="brand-logo" style="background: #1428a0;">S</div>
+                        <h6>三星 Samsung</h6>
+                        <small class="text-muted">25款手机</small>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                    <div class="brand-card">
+                        <div class="brand-logo" style="background: #ff6900;">X</div>
+                        <h6>小米 Xiaomi</h6>
+                        <small class="text-muted">30款手机</small>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                    <div class="brand-card">
+                        <div class="brand-logo" style="background: #ff0000;">H</div>
+                        <h6>华为 Huawei</h6>
+                        <small class="text-muted">20款手机</small>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                    <div class="brand-card">
+                        <div class="brand-logo" style="background: #1ba784;">O</div>
+                        <h6>OPPO</h6>
+                        <small class="text-muted">18款手机</small>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                    <div class="brand-card">
+                        <div class="brand-logo" style="background: #4285f4;">V</div>
+                        <h6>vivo</h6>
+                        <small class="text-muted">22款手机</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 下载应用 -->
+    <section id="download" class="cta-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h2 class="mb-3">下载手机测评中心应用</h2>
+                    <p class="mb-4">随时随地查看手机测评，支持离线浏览，个性化推荐</p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="https://github.com/hinoishicn/phone-review-center/releases" class="btn btn-light btn-lg">
+                            <i class="fab fa-android me-2"></i>Android 应用
+                        </a>
+                        <a href="https://hinoishicn.github.io/phone-review-center" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-globe me-2"></i>网页版本
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <i class="fas fa-mobile-alt" style="font-size: 8rem; opacity: 0.3;"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4">
+                    <h5><i class="fas fa-mobile-alt me-2"></i>手机测评中心</h5>
+                    <p class="text-muted">专业的手机测评平台，为您提供最全面、最客观的手机评测信息。</p>
+                </div>
+                <div class="col-lg-4">
+                    <h6>快速链接</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#home" class="text-light text-decoration-none">首页</a></li>
+                        <li><a href="#features" class="text-light text-decoration-none">功能特色</a></li>
+                        <li><a href="#brands" class="text-light text-decoration-none">热门品牌</a></li>
+                        <li><a href="https://github.com/hinoishicn/phone-review-center" class="text-light text-decoration-none">GitHub仓库</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4">
+                    <h6>联系我们</h6>
+                    <p class="text-muted">
+                        <i class="fab fa-github me-2"></i>GitHub: hinoishicn<br>
+                        <i class="fas fa-envelope me-2"></i>项目开源，欢迎贡献
+                    </p>
+                </div>
+            </div>
+            <hr class="my-4 bg-secondary">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="text-muted mb-0">&copy; 2024 手机测评中心. 保留所有权利.</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p class="text-muted mb-0">开源项目 | <a href="https://github.com/hinoishicn/phone-review-center" class="text-light">GitHub</a></p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- 平滑滚动 -->
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // 导航栏滚动效果
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+                navbar.style.backdropFilter = 'blur(10px)';
+            } else {
+                navbar.style.background = 'white';
+                navbar.style.backdropFilter = 'none';
+            }
+        });
+
+        // 数字动画
+        function animateNumbers() {
+            const numbers = document.querySelectorAll('.stat-number');
+            numbers.forEach(number => {
+                const target = parseInt(number.textContent);
+                let current = 0;
+                const increment = target / 50;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= target) {
+                        number.textContent = target + (number.textContent.includes('+') ? '+' : '');
+                        clearInterval(timer);
+                    } else {
+                        number.textContent = Math.floor(current) + (number.textContent.includes('+') ? '+' : '');
+                    }
+                }, 30);
+            });
+        }
+
+        // 当统计区域进入视口时触发动画
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateNumbers();
+                    observer.unobserve(entry.target);
+                }
+            });
+        });
+
+        observer.observe(document.querySelector('.stats-section'));
+    </script>
+</body>
+</html>
