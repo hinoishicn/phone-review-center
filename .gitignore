@@ -1,0 +1,16 @@
+# 忽略的文件和目录
+/vendor/
+/node_modules/
+/uploads/*
+!/uploads/.gitkeep
+/config/database.local.php
+.DS_Store
+Thumbs.db
+*.log
+*.cache
+.env
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

@@ -1,6 +1,6 @@
 <?php
 /**
- * 手机测评中心 - 首页
+ * 手机测评中心 - 品牌页面
  * 
  * @package PhoneReviewCenter
  * @author Phone Review Center Team
@@ -10,25 +10,63 @@
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/includes/functions.php';
 
-// 获取热门手机
-$popular_phones = getPopularPhones(8);
+// 获取品牌ID
+$brand_id = $_GET['id'] ?? 0;
 
-// 获取热门品牌
-$popular_brands = getAllBrands();
+// 获取品牌信息
+$brand_sql = "SELECT * FROM brands WHERE id = ? AND status = 'active'";
+$brand_stmt = $pdo->prepare($brand_sql);
+$brand_stmt->execute([$brand_id]);
+$brand = $brand_stmt->fetch();
 
-// 获取最新手机
-$latest_phones = getAllPhones([], 6, 0);
+if (!$brand) {
+    header('Location: brands.php');
+    exit;
+}
+
+// 获取该品牌的手机
+$page = max(1, intval($_GET['page'] ?? 1));
+$limit = 12;
+$offset = ($page - 1) * $limit;
+
+$phones_sql = "SELECT p.*, b.name as brand_name, b.slug as brand_slug 
+               FROM phones p 
+               JOIN brands b ON p.brand_id = b.id 
+               WHERE p.brand_id = ? AND p.status = 'active' 
+               ORDER BY p.popularity DESC 
+               LIMIT ? OFFSET ?";
+$phones_stmt = $pdo->prepare($phones_sql);
+$phones_stmt->execute([$brand_id, $limit, $offset]);
+$phones = $phones_stmt->fetchAll();
+
+// 获取手机总数
+$total_sql = "SELECT COUNT(*) as total FROM phones WHERE brand_id = ? AND status = 'active'";
+$total_stmt = $pdo->prepare($total_sql);
+$total_stmt->execute([$brand_id]);
+$total_phones = $total_stmt->fetch()['total'];
+
+// 获取品牌统计信息
+$stats_sql = "SELECT 
+                COUNT(*) as total_phones,
+                AVG(price) as avg_price,
+                MAX(price) as max_price,
+                MIN(price) as min_price
+              FROM phones 
+              WHERE brand_id = ? AND status = 'active'";
+$stats_stmt = $pdo->prepare($stats_sql);
+$stats_stmt->execute([$brand_id]);
+$stats = $stats_stmt->fetch();
 
 // 设置页面标题
-$page_title = "手机测评中心 - 专业手机对比评测平台";
-$page_description = "提供最新手机详细对比评测，包括处理器性能、摄像头参数、电池续航、充电速度、防水等级等全方位信息";
+$page_title = $brand['name'] . ' - 手机大全';
+$page_description = $brand['name'] . '手机大全，包含' . $brand['name'] . '所有手机型号的详细参数、价格、评测信息';
 ?>
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo safe_echo($page_title); ?></title>
+    <title><?php echo safe_echo($page_title); ?> - 手机测评中心</title>
     <meta name="description" content="<?php echo safe_echo($page_description); ?>">
     
     <!-- Bootstrap CSS -->
@@ -51,10 +89,10 @@ $page_description = "提供最新手机详细对比评测，包括处理器性�
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="index.php">首页</a>
+                        <a class="nav-link" href="index.php">首页</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="brands.php">品牌大全</a>
+                        <a class="nav-link active" href="brands.php">品牌大全</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="compare.php">手机对比</a>
@@ -70,69 +108,115 @@ $page_description = "提供最新手机详细对比评测，包括处理器性�
         </div>
     </nav>
 
-    <!-- 英雄区域 -->
-    <section class="hero-section bg-gradient-primary text-white py-5">
+    <!-- 品牌信息 -->
+    <section class="py-5">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6">
-                    <h1 class="display-4 fw-bold mb-4">专业手机测评平台</h1>
-                    <p class="lead mb-4">提供最新、最真实的手机对比评测信息，包括处理器性能、摄像头参数、电池续航、充电速度、防水等级等全方位数据</p>
-                    <div class="d-flex gap-3">
-                        <a href="search.php" class="btn btn-light btn-lg px-4">
-                            <i class="fas fa-search me-2"></i>搜索手机
-                        </a>
-                        <a href="compare.php" class="btn btn-outline-light btn-lg px-4">
-                            <i class="fas fa-balance-scale me-2"></i>开始对比
-                        </a>
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="brand-logo me-4">
+                                    <div class="brand-icon bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 80px; height: 80px; font-size: 24px;">
+                                        <?php echo mb_substr($brand['name'], 0, 1); ?>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h1 class="h2 mb-2"><?php echo safe_echo($brand['name']); ?></h1>
+                                    <p class="text-muted mb-0"><?php echo safe_echo($brand['description']); ?></p>
+                                </div>
+                            </div>
+                            
+                            <!-- 品牌统计 -->
+                            <div class="row text-center">
+                                <div class="col-md-3 mb-3">
+                                    <div class="bg-light rounded p-3">
+                                        <h4 class="text-primary mb-1"><?php echo $stats['total_phones']; ?></h4>
+                                        <p class="text-muted mb-0">在售机型</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="bg-light rounded p-3">
+                                        <h4 class="text-primary mb-1"><?php echo formatPrice($stats['avg_price']); ?></h4>
+                                        <p class="text-muted mb-0">平均价格</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="bg-light rounded p-3">
+                                        <h4 class="text-primary mb-1"><?php echo formatPrice($stats['min_price']); ?></h4>
+                                        <p class="text-muted mb-0">最低价格</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <div class="bg-light rounded p-3">
+                                        <h4 class="text-primary mb-1"><?php echo formatPrice($stats['max_price']); ?></h4>
+                                        <p class="text-muted mb-0">最高价格</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-lg-6 text-center">
-                    <div class="hero-image">
-                        <i class="fas fa-mobile-alt fa-10x opacity-75"></i>
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>品牌信息
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong>品牌名称：</strong>
+                                <span><?php echo safe_echo($brand['name']); ?></span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>品牌标识：</strong>
+                                <span><?php echo safe_echo($brand['slug']); ?></span>
+                            </div>
+                            <div class="mb-3">
+                                <strong>官方网站：</strong>
+                                <a href="<?php echo safe_echo($brand['website']); ?>" target="_blank" class="text-decoration-none">
+                                    <?php echo safe_echo($brand['website']); ?>
+                                </a>
+                            </div>
+                            <div class="mb-0">
+                                <strong>总部位置：</strong>
+                                <span><?php echo safe_echo($brand['headquarters']); ?></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 热门品牌 -->
+    <!-- 手机列表 -->
     <section class="py-5 bg-light">
         <div class="container">
             <div class="row mb-4">
-                <div class="col-12 text-center">
-                    <h2 class="fw-bold mb-3">热门品牌</h2>
-                    <p class="text-muted">汇聚全球知名手机品牌，为您提供最全面的产品信息</p>
+                <div class="col-12">
+                    <h2 class="fw-bold mb-3"><?php echo safe_echo($brand['name']); ?> 手机大全</h2>
+                    <p class="text-muted mb-0">共找到 <?php echo $total_phones; ?> 款手机</p>
                 </div>
             </div>
-            <div class="row">
-                <?php foreach ($popular_brands as $brand): ?>
-                <div class="col-lg-2 col-md-3 col-sm-4 col-6 mb-3">
-                    <a href="brand.php?id=<?php echo $brand['id']; ?>" class="text-decoration-none">
-                        <div class="card brand-card h-100 text-center p-3">
-                            <div class="brand-logo mb-2">
-                                <i class="fas fa-mobile-alt fa-2x text-primary"></i>
-                            </div>
-                            <h6 class="mb-1"><?php echo safe_echo($brand['name']); ?></h6>
-                            <small class="text-muted"><?php echo $brand['phone_count']; ?> 款机型</small>
-                        </div>
-                    </a>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </section>
 
-    <!-- 热门手机推荐 -->
-    <section class="py-5">
-        <div class="container">
-            <div class="row mb-4">
-                <div class="col-12 text-center">
-                    <h2 class="fw-bold mb-3">热门手机推荐</h2>
-                    <p class="text-muted">基于真实用户数据和专业评测，为您推荐最受欢迎的手机</p>
+            <?php if (empty($phones)): ?>
+            <div class="row">
+                <div class="col-12">
+                    <div class="text-center py-5">
+                        <i class="fas fa-mobile-alt fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted mb-3">暂无<?php echo safe_echo($brand['name']); ?>手机</h4>
+                        <p class="text-muted mb-4">该品牌暂时没有在售手机</p>
+                        <a href="brands.php" class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>返回品牌列表
+                        </a>
+                    </div>
                 </div>
             </div>
+            <?php else: ?>
             <div class="row">
-                <?php foreach ($popular_phones as $phone): ?>
+                <?php foreach ($phones as $phone): ?>
                 <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                     <div class="card phone-card h-100">
                         <div class="phone-image text-center py-3">
@@ -168,77 +252,18 @@ $page_description = "提供最新手机详细对比评测，包括处理器性�
                 </div>
                 <?php endforeach; ?>
             </div>
-            <div class="text-center">
-                <a href="search.php" class="btn btn-outline-primary">查看更多手机</a>
-            </div>
-        </div>
-    </section>
 
-    <!-- 功能特色 -->
-    <section class="py-5 bg-light">
-        <div class="container">
-            <div class="row mb-4">
-                <div class="col-12 text-center">
-                    <h2 class="fw-bold mb-3">功能特色</h2>
-                    <p class="text-muted">专业的评测体系，为您提供最准确的信息</p>
-                </div>
-            </div>
+            <!-- 分页 -->
+            <?php if ($total_phones > $limit): ?>
             <div class="row">
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="feature-card text-center p-4">
-                        <div class="feature-icon mb-3">
-                            <i class="fas fa-microchip fa-3x text-primary"></i>
-                        </div>
-                        <h5>处理器性能</h5>
-                        <p class="text-muted">详细的处理器参数和跑分数据，让您了解手机的真实性能表现</p>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="feature-card text-center p-4">
-                        <div class="feature-icon mb-3">
-                            <i class="fas fa-camera fa-3x text-primary"></i>
-                        </div>
-                        <h5>摄像头评测</h5>
-                        <p class="text-muted">专业的摄像头参数分析和样张对比，帮您选择拍照效果最好的手机</p>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="feature-card text-center p-4">
-                        <div class="feature-icon mb-3">
-                            <i class="fas fa-battery-full fa-3x text-primary"></i>
-                        </div>
-                        <h5>电池续航</h5>
-                        <p class="text-muted">真实的电池容量和续航测试数据，让您了解手机的续航能力</p>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="feature-card text-center p-4">
-                        <div class="feature-icon mb-3">
-                            <i class="fas fa-bolt fa-3x text-primary"></i>
-                        </div>
-                        <h5>充电速度</h5>
-                        <p class="text-muted">详细的充电功率和充电时间测试，帮您选择充电最快的手机</p>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="feature-card text-center p-4">
-                        <div class="feature-icon mb-3">
-                            <i class="fas fa-shield-alt fa-3x text-primary"></i>
-                        </div>
-                        <h5>防水等级</h5>
-                        <p class="text-muted">准确的防水等级信息，让您了解手机的防水性能</p>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="feature-card text-center p-4">
-                        <div class="feature-icon mb-3">
-                            <i class="fas fa-balance-scale fa-3x text-primary"></i>
-                        </div>
-                        <h5>智能对比</h5>
-                        <p class="text-muted">一键对比多款手机，直观展示各项参数差异</p>
-                    </div>
+                <div class="col-12">
+                    <?php
+                    echo paginate($total_phones, $limit, $page, 'brand.php?id=' . $brand_id . '&page=%d');
+                    ?>
                 </div>
             </div>
+            <?php endif; ?>
+            <?php endif; ?>
         </div>
     </section>
 
@@ -264,8 +289,11 @@ $page_description = "提供最新手机详细对比评测，包括处理器性�
                 <div class="col-lg-2 mb-4">
                     <h6 class="mb-3">热门品牌</h6>
                     <ul class="list-unstyled">
-                        <?php foreach (array_slice($popular_brands, 0, 6) as $brand): ?>
-                        <li class="mb-2"><a href="brand.php?id=<?php echo $brand['id']; ?>" class="text-muted text-decoration-none"><?php echo safe_echo($brand['name']); ?></a></li>
+                        <?php
+                        $all_brands = getAllBrands();
+                        foreach (array_slice($all_brands, 0, 6) as $b): 
+                        ?>
+                        <li class="mb-2"><a href="brand.php?id=<?php echo $b['id']; ?>" class="text-muted text-decoration-none"><?php echo safe_echo($b['name']); ?></a></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
@@ -296,8 +324,6 @@ $page_description = "提供最新手机详细对比评测，包括处理器性�
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- 自定义JS -->
-    <script src="assets/js/main.js"></script>
     
     <script>
     // 添加到对比
